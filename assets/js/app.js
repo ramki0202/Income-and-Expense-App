@@ -35,8 +35,12 @@ const modal = document.getElementById("modal");
 const closeModal = document.getElementById("closeModal");
 const transactionForm = document.getElementById("transactionForm");
 
+let editingIndex = null;
+
 // Show modal
 addBtn.addEventListener("click", () => {
+  editingIndex = null;
+  transactionForm.reset();
   modal.classList.remove("hidden");
 });
 
@@ -88,30 +92,40 @@ function updateSummary() {
 renderTransactions();
 updateSummary();
 
+// Unified submit handler for add and edit
 transactionForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
-  const newTransaction = {
-    id: Date.now(), // unique id
+  const amountValue = parseFloat(document.getElementById("amount").value);
+  if (isNaN(amountValue)) {
+    alert("Please enter a valid amount");
+    return;
+  }
+
+  const transactionData = {
+    id: editingIndex !== null ? transactions[editingIndex].id : Date.now(),
     date: document.getElementById("date").value,
     category: document.getElementById("category").value,
     type: document.getElementById("type").value,
-    amount: parseFloat(document.getElementById("amount").value),
+    amount: amountValue,
   };
 
-  // Add to transactions array
-  transactions.push(newTransaction);
+  if (editingIndex !== null) {
+    // Edit mode
+    transactions[editingIndex] = transactionData;
+    editingIndex = null; // reset edit mode
+  } else {
+    // Add mode
+    transactions.push(transactionData);
+  }
 
-  // Update UI
   renderTransactions();
   updateSummary();
-
-  // Close modal & reset form
   modal.classList.add("hidden");
   transactionForm.reset();
 });
 
-// Handle  Delete
+// Handle Delete and Edit buttons
 function attachRowButtons() {
   const deleteBtns = document.querySelectorAll(".deleteBtn");
   const editBtns = document.querySelectorAll(".editBtn");
@@ -126,7 +140,7 @@ function attachRowButtons() {
     });
   });
 
-  // Edit (Next Step)
+  // Edit
   editBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       const index = btn.getAttribute("data-index");
@@ -135,49 +149,15 @@ function attachRowButtons() {
   });
 }
 
-// handle Edit
+// Open modal in edit mode and populate fields
 function openEditModal(index) {
   const t = transactions[index];
-  // Fill modal fields
+  editingIndex = index; // mark which transaction is being edited
+
   document.getElementById("date").value = t.date;
   document.getElementById("category").value = t.category;
   document.getElementById("type").value = t.type;
   document.getElementById("amount").value = t.amount;
 
-  modal.classList.remove("hidden");
-
-  // Temporary submit listener for edit
-  transactionForm.onsubmit = (e) => {
-    e.preventDefault();
-    t.date = document.getElementById("date").value;
-    t.category = document.getElementById("category").value;
-    t.type = document.getElementById("type").value;
-    t.amount = parseFloat(document.getElementById("amount").value);
-
-    renderTransactions();
-    updateSummary();
-    modal.classList.add("hidden");
-    transactionForm.reset();
-
-    // Restore original submit for adding new
-    transactionForm.onsubmit = addTransactionSubmit;
-  };
+  modal.classList.remove("hidden"); // show modal
 }
-
-function addTransactionSubmit(e) {
-  e.preventDefault();
-  const newTransaction = {
-    id: Date.now(),
-    date: document.getElementById("date").value,
-    category: document.getElementById("category").value,
-    type: document.getElementById("type").value,
-    amount: parseFloat(document.getElementById("amount").value),
-  };
-  transactions.push(newTransaction);
-  renderTransactions();
-  updateSummary();
-  modal.classList.add("hidden");
-  transactionForm.reset();
-}
-
-transactionForm.addEventListener("submit", addTransactionSubmit);
