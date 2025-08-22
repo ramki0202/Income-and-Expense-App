@@ -13,9 +13,45 @@
     <!-- Navbar -->
     <header class="w-full bg-white shadow-sm px-6 py-4 flex justify-between items-center">
         <h1 class="text-xl font-bold text-indigo-600">💰 Money Tracker</h1>
-        <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition">
+        <!-- Add Transaction Button in Navbar -->
+        <button id="addBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition">
             + Add Transaction
         </button>
+
+        <!-- Modal -->
+        <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
+            <div class="bg-white rounded-xl p-6 w-full max-w-md">
+                <h2 class="text-lg font-bold mb-4">Add Transaction</h2>
+                <form id="transactionForm" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-600">Date</label>
+                        <input type="date" id="date" class="w-full border rounded p-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-600">Category</label>
+                        <input type="text" id="category" class="w-full border rounded p-2"
+                            placeholder="e.g. Food, Salary" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-600">Type</label>
+                        <select id="type" class="w-full border rounded p-2" required>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-600">Amount</label>
+                        <input type="number" id="amount" class="w-full border rounded p-2" placeholder="₹ 0" required>
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button type="button" id="closeModal"
+                            class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Add</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </header>
 
     <div class="flex flex-1">
@@ -43,15 +79,15 @@
             <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-white rounded-xl shadow-md p-5">
                     <h2 class="text-gray-500">Balance</h2>
-                    <p class="text-3xl font-bold text-gray-800 mt-2">₹ 0</p>
+                    <p id="balance" class="text-3xl font-bold text-gray-800 mt-2">₹ 0</p>
                 </div>
                 <div class="bg-white rounded-xl shadow-md p-5">
                     <h2 class="text-gray-500">Income</h2>
-                    <p class="text-3xl font-bold text-green-600 mt-2">₹ 0</p>
+                    <p id="income" class="text-3xl font-bold text-green-600 mt-2">₹ 0</p>
                 </div>
                 <div class="bg-white rounded-xl shadow-md p-5">
                     <h2 class="text-gray-500">Expense</h2>
-                    <p class="text-3xl font-bold text-red-600 mt-2">₹ 0</p>
+                    <p id="expense" class="text-3xl font-bold text-red-600 mt-2">₹ 0</p>
                 </div>
             </section>
 
@@ -68,25 +104,8 @@
                                 <th class="px-6 py-3">Amount</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr class="border-b hover:bg-gray-50 transition">
-                                <td class="px-6 py-3">2025-08-20</td>
-                                <td class="px-6 py-3">Food</td>
-                                <td class="px-6 py-3 text-red-600">Expense</td>
-                                <td class="px-6 py-3">₹ 500</td>
-                            </tr>
-                            <tr class="border-b hover:bg-gray-50 transition">
-                                <td class="px-6 py-3">2025-08-19</td>
-                                <td class="px-6 py-3">Salary</td>
-                                <td class="px-6 py-3 text-green-600">Income</td>
-                                <td class="px-6 py-3">₹ 20,000</td>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-3">2025-08-18</td>
-                                <td class="px-6 py-3">Travel</td>
-                                <td class="px-6 py-3 text-red-600">Expense</td>
-                                <td class="px-6 py-3">₹ 1,200</td>
-                            </tr>
+                        <tbody id="transaction-body">
+
                         </tbody>
                     </table>
                 </div>
@@ -94,5 +113,6 @@
         </main>
     </div>
 </body>
+<script src="assets/js/app.js"></script>
 
 </html>
