@@ -214,9 +214,10 @@ transactionForm.addEventListener("submit", (e) => {
   }
 
   saveTransactions();
-  renderTransactions();
-  updateSummary();
+  // Ensure all UI updates after transaction change
   populateCategoryFilter();
+  updateSummary();
+  renderTransactions();
   renderChart();
   modal.classList.add("hidden");
   transactionForm.reset();
