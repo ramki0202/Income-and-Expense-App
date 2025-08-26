@@ -1,105 +1,201 @@
-// Sample transactions (later replaced with API)
-const transactions = [
-  { id: 1, date: "2025-08-20", category: "Food", type: "expense", amount: 500 },
-  {
-    id: 2,
-    date: "2025-08-19",
-    category: "Salary",
-    type: "income",
-    amount: 4043,
-  },
-  {
-    id: 3,
-    date: "2025-08-18",
-    category: "Travel",
-    type: "expense",
-    amount: 1200,
-  },
-  {
-    id: 4,
-    date: "2025-08-17",
-    category: "Freelance",
-    type: "income",
-    amount: 43,
-  },
-];
-
 // Selectors
 const balanceEl = document.querySelector("#balance");
 const incomeEl = document.querySelector("#income");
 const expenseEl = document.querySelector("#expense");
 const tableBody = document.querySelector("#transaction-body");
-
 const addBtn = document.getElementById("addBtn");
 const modal = document.getElementById("modal");
 const closeModal = document.getElementById("closeModal");
 const transactionForm = document.getElementById("transactionForm");
+const filterEl = document.getElementById("filter");
+const categoryFilterEl = document.getElementById("categoryFilter");
+const sortEl = document.getElementById("sort");
 
 let editingIndex = null;
 
-// Show modal
+function saveTransactions() {
+  localStorage.setItem("transactions", JSON.stringify(transactions));
+}
+
+function loadTransactions() {
+  const data = localStorage.getItem("transactions");
+  return data ? JSON.parse(data) : [];
+}
+
+let transactions = loadTransactions();
+
+function renderChart() {
+  const income = transactions
+    .filter((t) => t.type === "income")
+    .reduce((sum, t) => sum + t.amount, 0);
+  const expense = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const ctx = document.getElementById("pieChart").getContext("2d");
+  new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: ["Income", "Expense"],
+      datasets: [
+        {
+          data: [income, expense],
+          backgroundColor: ["#16a34a", "#dc2626"],
+        },
+      ],
+    },
+  });
+}
+
+// ---------- Modal Controls ----------
 addBtn.addEventListener("click", () => {
-  editingIndex = null;
+  editingIndex = null; // Add mode
   transactionForm.reset();
   modal.classList.remove("hidden");
 });
 
-// Hide modal
 closeModal.addEventListener("click", () => {
+  editingIndex = null; // reset when closed
   modal.classList.add("hidden");
 });
 
-// Render Transactions
-function renderTransactions() {
-  tableBody.innerHTML = "";
-  transactions.forEach((t, index) => {
-    const row = document.createElement("tr");
-    row.className = "border-b hover:bg-gray-50 transition";
-    row.innerHTML = `
-      <td class="px-6 py-3">${t.date}</td>
-      <td class="px-6 py-3">${t.category}</td>
-      <td class="px-6 py-3 ${
-        t.type === "income" ? "text-green-600" : "text-red-600"
-      }">${t.type}</td>
-      <td class="px-6 py-3">₹ ${t.amount.toLocaleString()}</td>
-      <td class="px-6 py-3 flex space-x-2">
-        <button class="editBtn px-2 py-1 bg-yellow-400 rounded hover:bg-yellow-500 text-white" data-index="${index}">Edit</button>
-        <button class="deleteBtn px-2 py-1 bg-red-500 rounded hover:bg-red-600 text-white" data-index="${index}">Delete</button>
-      </td>
-    `;
-    tableBody.appendChild(row);
-  });
-  attachRowButtons();
+if (sortEl) {
+  sortEl.addEventListener("change", renderTransactions);
 }
 
-// Update Cards
+// ---------- Render Transactions ----------
+function renderTransactions() {
+  const typeFilter = filterEl ? filterEl.value : "all";
+  const categoryFilter = categoryFilterEl ? categoryFilterEl.value : "all";
+
+  const filtered = transactions.filter(
+    (t) =>
+      (typeFilter === "all" || t.type === typeFilter) &&
+      (categoryFilter === "all" || t.category === categoryFilter)
+  );
+
+  if (filtered.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">No transactions found.</td></tr>`;
+    attachRowButtons();
+    renderChart();
+    return;
+  }
+  // inside renderTransactions, after filtering
+  if (sortEl) {
+    switch (sortEl.value) {
+      case "date_asc":
+        filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+        break;
+      case "date_desc":
+        filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+        break;
+      case "amount_asc":
+        filtered.sort((a, b) => a.amount - b.amount);
+        break;
+      case "amount_desc":
+        filtered.sort((a, b) => b.amount - a.amount);
+        break;
+    }
+  }
+
+  tableBody.innerHTML = filtered
+    .map((t) => {
+      const realIndex = transactions.findIndex((tr) => tr.id === t.id);
+      return `
+      <tr class="border-b hover:bg-gray-50 transition">
+        <td class="px-6 py-3">${t.date}</td>
+        <td class="px-6 py-3">
+          <span class="px-2 py-1 rounded text-white ${
+            t.category === "Food"
+              ? "bg-green-500"
+              : t.category === "Travel"
+              ? "bg-blue-500"
+              : "bg-gray-500"
+          }">
+            ${t.category}
+          </span>
+        </td>
+        <td class="px-6 py-3 ${
+          t.type === "income" ? "text-green-600" : "text-red-600"
+        }">${t.type}</td>
+        <td class="px-6 py-3">₹ ${t.amount.toLocaleString()}</td>
+        <td class="px-6 py-3 flex space-x-2">
+          <button class="editBtn px-2 py-1 bg-yellow-400 rounded hover:bg-yellow-500 text-white" data-index="${realIndex}">Edit</button>
+          <button class="deleteBtn px-2 py-1 bg-red-500 rounded hover:bg-red-600 text-white" data-index="${realIndex}">Delete</button>
+        </td>
+      </tr>
+    `;
+    })
+    .join("");
+  attachRowButtons();
+  renderChart();
+}
+
+if (filterEl) {
+  filterEl.addEventListener("change", () => {
+    renderTransactions();
+  });
+}
+
+if (categoryFilterEl) {
+  categoryFilterEl.addEventListener("change", () => {
+    renderTransactions();
+  });
+}
+
+// Populate category filter dynamically
+function populateCategoryFilter() {
+  const categories = [...new Set(transactions.map((t) => t.category))];
+  categoryFilterEl.innerHTML =
+    `<option value="all">All</option>` +
+    categories.map((c) => `<option value="${c}">${c}</option>`).join("");
+}
+
+// ---------- Update Summary ----------
 function updateSummary() {
   let income = 0,
     expense = 0;
-  transactions.forEach((t) => {
-    if (t.type === "income") income += t.amount;
-    else expense += t.amount;
-  });
 
-  const balance = income - expense;
+  transactions.forEach((t) =>
+    t.type === "income" ? (income += t.amount) : (expense += t.amount)
+  );
 
-  balanceEl.textContent = `₹ ${balance.toLocaleString()}`;
+  balanceEl.textContent = `₹ ${(income - expense).toLocaleString()}`;
   incomeEl.textContent = `₹ ${income.toLocaleString()}`;
   expenseEl.textContent = `₹ ${expense.toLocaleString()}`;
 }
 
-// Init
-renderTransactions();
-updateSummary();
+// ---------- Attach Row Buttons ----------
+function attachRowButtons() {
+  document.querySelectorAll(".deleteBtn").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const realIndex = parseInt(btn.dataset.index, 10);
+      if (isNaN(realIndex)) return;
+      transactions.splice(realIndex, 1);
+      saveTransactions();
+      renderTransactions();
+      updateSummary();
+      populateCategoryFilter();
+      renderChart();
+    })
+  );
 
-// Unified submit handler for add and edit
+  document.querySelectorAll(".editBtn").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const realIndex = parseInt(btn.dataset.index, 10);
+      if (isNaN(realIndex)) return;
+      openEditModal(realIndex);
+    })
+  );
+}
+
+// ---------- Submit Handler ----------
 transactionForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
   const amountValue = parseFloat(document.getElementById("amount").value);
   if (isNaN(amountValue)) {
-    alert("Please enter a valid amount");
-    return;
+    return alert("Please enter a valid amount");
   }
 
   const transactionData = {
@@ -111,53 +207,37 @@ transactionForm.addEventListener("submit", (e) => {
   };
 
   if (editingIndex !== null) {
-    // Edit mode
-    transactions[editingIndex] = transactionData;
-    editingIndex = null; // reset edit mode
+    transactions[editingIndex] = transactionData; // Edit mode
+    editingIndex = null;
   } else {
-    // Add mode
-    transactions.push(transactionData);
+    transactions.push(transactionData); // Add mode
   }
 
+  saveTransactions();
   renderTransactions();
   updateSummary();
+  populateCategoryFilter();
+  renderChart();
   modal.classList.add("hidden");
   transactionForm.reset();
 });
 
-// Handle Delete and Edit buttons
-function attachRowButtons() {
-  const deleteBtns = document.querySelectorAll(".deleteBtn");
-  const editBtns = document.querySelectorAll(".editBtn");
-
-  // Delete
-  deleteBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const index = btn.getAttribute("data-index");
-      transactions.splice(index, 1); // remove from array
-      renderTransactions();
-      updateSummary();
-    });
-  });
-
-  // Edit
-  editBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const index = btn.getAttribute("data-index");
-      openEditModal(index);
-    });
-  });
-}
-
-// Open modal in edit mode and populate fields
+// ---------- Open Edit Modal ----------
 function openEditModal(index) {
   const t = transactions[index];
-  editingIndex = index; // mark which transaction is being edited
+  editingIndex = index;
 
-  document.getElementById("date").value = t.date;
-  document.getElementById("category").value = t.category;
-  document.getElementById("type").value = t.type;
-  document.getElementById("amount").value = t.amount;
+  ["date", "category", "type", "amount"].forEach((id) => {
+    document.getElementById(id).value = t[id];
+  });
 
-  modal.classList.remove("hidden"); // show modal
+  modal.classList.remove("hidden");
 }
+
+// ---------- Init ----------
+saveTransactions();
+renderTransactions();
+updateSummary();
+populateCategoryFilter(); // refresh categories
+renderChart();
+attachRowButtons();
