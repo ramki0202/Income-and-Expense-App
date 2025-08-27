@@ -1,25 +1,31 @@
-// Selectors
-const balanceEl = document.querySelector("#balance");
-const incomeEl = document.querySelector("#income");
-const expenseEl = document.querySelector("#expense");
-const tableBody = document.querySelector("#transaction-body");
-const addBtn = document.getElementById("addBtn");
-const modal = document.getElementById("modal");
-const closeModal = document.getElementById("closeModal");
-const transactionForm = document.getElementById("transactionForm");
-const filterEl = document.getElementById("filter");
-const categoryFilterEl = document.getElementById("categoryFilter");
-const sortEl = document.getElementById("sort");
-const fromDateEl = document.getElementById("fromDate");
-const toDateEl = document.getElementById("toDate");
-const API_BASE_URL =
-  "https://68ae7584b91dfcdd62b9356a.mockapi.io/incomeandexpence";
 
-let transactions = [];
-let currency = localStorage.getItem("currency") || "₹";
-let barChartInstance = null;
-let editingIndex = null;
+// -------------------- DOM Selectors --------------------
+const balanceEl = document.querySelector("#balance"); // Balance display
+const incomeEl = document.querySelector("#income"); // Income display
+const expenseEl = document.querySelector("#expense"); // Expense display
+const tableBody = document.querySelector("#transaction-body"); // Table body for transactions
+const addBtn = document.getElementById("addBtn"); // Add transaction button
+const modal = document.getElementById("modal"); // Modal for add/edit
+const closeModal = document.getElementById("closeModal"); // Close modal button
+const transactionForm = document.getElementById("transactionForm"); // Transaction form
+const filterEl = document.getElementById("filter"); // Type filter
+const categoryFilterEl = document.getElementById("categoryFilter"); // Category filter
+const sortEl = document.getElementById("sort"); // Sort select
+const fromDateEl = document.getElementById("fromDate"); // From date filter
+const toDateEl = document.getElementById("toDate"); // To date filter
+const API_BASE_URL = "https://68ae7584b91dfcdd62b9356a.mockapi.io/incomeandexpence"; // API endpoint
 
+// -------------------- State Variables --------------------
+let transactions = []; // All transactions
+let currency = localStorage.getItem("currency") || "₹"; // Selected currency
+let barChartInstance = null; // Bar chart instance
+// Pie chart instance (declared above with other state variables)
+let editingIndex = null; // Index of transaction being edited
+
+
+// -------------------- API Functions --------------------
+
+// Add a new transaction to the API
 async function addTransactionAPI(transaction) {
   const res = await fetch(API_BASE_URL, {
     method: "POST",
@@ -29,6 +35,7 @@ async function addTransactionAPI(transaction) {
   return await res.json();
 }
 
+// Update an existing transaction in the API
 async function updateTransactionAPI(id, transaction) {
   const res = await fetch(`${API_BASE_URL}/${id}`, {
     method: "PUT",
@@ -38,10 +45,12 @@ async function updateTransactionAPI(id, transaction) {
   return await res.json();
 }
 
+// Delete a transaction from the API
 async function deleteTransactionAPI(id) {
   await fetch(`${API_BASE_URL}/${id}`, { method: "DELETE" });
 }
 
+// Load transactions from the API, optionally filtered by date
 async function loadTransactions() {
   const fromDateStr = fromDateEl ? fromDateEl.value : null;
   const toDateStr = toDateEl ? toDateEl.value : null;
