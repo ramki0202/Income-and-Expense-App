@@ -10,6 +10,8 @@ const transactionForm = document.getElementById("transactionForm");
 const filterEl = document.getElementById("filter");
 const categoryFilterEl = document.getElementById("categoryFilter");
 const sortEl = document.getElementById("sort");
+const fromDateEl = document.getElementById("fromDate");
+const toDateEl = document.getElementById("toDate");
 
 let editingIndex = null;
 
@@ -23,7 +25,9 @@ function loadTransactions() {
 }
 
 let transactions = loadTransactions();
+let barChartInstance = null;
 
+let pieChartInstance = null;
 function renderChart() {
   const income = transactions
     .filter((t) => t.type === "income")
@@ -32,8 +36,16 @@ function renderChart() {
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const ctx = document.getElementById("pieChart").getContext("2d");
-  new Chart(ctx, {
+  const pieCanvas = document.getElementById("pieChart");
+  if (!pieCanvas) return;
+  const ctx = pieCanvas.getContext("2d");
+
+  // Destroy previous pie chart instance if exists
+  if (pieChartInstance) {
+    pieChartInstance.destroy();
+  }
+
+  pieChartInstance = new Chart(ctx, {
     type: "pie",
     data: {
       labels: ["Income", "Expense"],
@@ -43,6 +55,16 @@ function renderChart() {
           backgroundColor: ["#16a34a", "#dc2626"],
         },
       ],
+    },
+    options: {
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom",
+        },
+      },
+      responsive: true,
+      maintainAspectRatio: false,
     },
   });
 }
@@ -67,17 +89,31 @@ if (sortEl) {
 function renderTransactions() {
   const typeFilter = filterEl ? filterEl.value : "all";
   const categoryFilter = categoryFilterEl ? categoryFilterEl.value : "all";
+  const fromDateStr = fromDateEl.value;
+  const toDateStr = toDateEl.value;
 
-  const filtered = transactions.filter(
-    (t) =>
-      (typeFilter === "all" || t.type === typeFilter) &&
-      (categoryFilter === "all" || t.category === categoryFilter)
-  );
+  const filtered = transactions.filter((t) => {
+    const typeMatch = typeFilter === "all" || t.type === typeFilter;
+    const categoryMatch = categoryFilter === "all" || t.category === categoryFilter;
+
+    // Convert to Date objects for robust comparison
+    const tDate = t.date ? new Date(t.date) : null;
+    const fromDate = fromDateStr ? new Date(fromDateStr) : null;
+    const toDate = toDateStr ? new Date(toDateStr) : null;
+
+    // Only compare if both dates are valid
+    const fromMatch = fromDate ? (tDate ? tDate >= fromDate : false) : true;
+    const toMatch = toDate ? (tDate ? tDate <= toDate : false) : true;
+
+    return typeMatch && categoryMatch && fromMatch && toMatch;
+  });
 
   if (filtered.length === 0) {
     tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">No transactions found.</td></tr>`;
     attachRowButtons();
     renderChart();
+    updateSummary();
+    renderBarChart();
     return;
   }
   // inside renderTransactions, after filtering
@@ -101,9 +137,11 @@ function renderTransactions() {
   tableBody.innerHTML = filtered
     .map((t) => {
       const realIndex = transactions.findIndex((tr) => tr.id === t.id);
+      const formattedDate = new Date(t.date);
+      const displayDate = formattedDate.toLocaleDateString("en-GB");
       return `
       <tr class="border-b hover:bg-gray-50 transition">
-        <td class="px-6 py-3">${t.date}</td>
+        <td class="px-6 py-3">${displayDate}</td>
         <td class="px-6 py-3">
           <span class="px-2 py-1 rounded text-white ${
             t.category === "Food"
@@ -129,6 +167,8 @@ function renderTransactions() {
     .join("");
   attachRowButtons();
   renderChart();
+  updateSummary();
+  renderBarChart();
 }
 
 if (filterEl) {
@@ -142,6 +182,10 @@ if (categoryFilterEl) {
     renderTransactions();
   });
 }
+
+[fromDateEl, toDateEl].forEach((el) => {
+  el.addEventListener("change", renderTransactions);
+});
 
 // Populate category filter dynamically
 function populateCategoryFilter() {
@@ -177,6 +221,7 @@ function attachRowButtons() {
       updateSummary();
       populateCategoryFilter();
       renderChart();
+      renderBarChart();
     })
   );
 
@@ -219,6 +264,7 @@ transactionForm.addEventListener("submit", (e) => {
   updateSummary();
   renderTransactions();
   renderChart();
+  renderBarChart();
   modal.classList.add("hidden");
   transactionForm.reset();
 });
@@ -241,4 +287,49 @@ renderTransactions();
 updateSummary();
 populateCategoryFilter(); // refresh categories
 renderChart();
+renderBarChart();
 attachRowButtons();
+
+function renderBarChart() {
+  const categoryTotals = {};
+
+  transactions.forEach((t) => {
+    if (t.type === "expense") {
+      categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+    }
+  });
+
+  const labels = Object.keys(categoryTotals);
+  const values = Object.values(categoryTotals);
+
+  const canvas = document.getElementById("barChart");
+  if (!canvas) return; // safeguard if element missing
+  const ctx = canvas.getContext("2d");
+
+  // Destroy old chart if exists
+  if (barChartInstance) {
+    barChartInstance.destroy();
+  }
+
+  barChartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Expenses by Category",
+          data: values,
+          backgroundColor: "#3b82f6",
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+        },
+      },
+    },
+  });
+}
