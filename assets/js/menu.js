@@ -6,6 +6,8 @@ const reportsMenu = document.getElementById("reportsMenu");
 const settingsMenu = document.getElementById("settingsMenu");
 const dashboardSection = document.getElementById("dashboardSection");
 const transactionsSection = document.getElementById("transactionsSection");
+const reportsSection = document.getElementById("reportsSection");
+const settingsSection = document.getElementById("settingsSection");
 
 const baseClasses =
   "flex items-center px-6 py-4 gap-3 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium";
@@ -25,6 +27,9 @@ dashboardMenu.addEventListener("click", (e) => {
   e.preventDefault();
   dashboardSection.classList.remove("hidden");
   transactionsSection.classList.add("hidden");
+  reportsSection.classList.add("hidden");
+  settingsSection.classList.add("hidden");
+  setActive(dashboardMenu);
   setActive(dashboardMenu);
 });
 
@@ -32,21 +37,29 @@ transactionsMenu.addEventListener("click", (e) => {
   e.preventDefault();
   dashboardSection.classList.add("hidden");
   transactionsSection.classList.remove("hidden");
+  settingsSection.classList.add("hidden");
+  setActive(transactionsMenu);
   setActive(transactionsMenu);
 });
 
 reportsMenu.addEventListener("click", (e) => {
   e.preventDefault();
   setActive(reportsMenu);
-  // Section not implemented, keep hidden
   dashboardSection.classList.add("hidden");
   transactionsSection.classList.add("hidden");
+  settingsSection.classList.add("hidden");
+  reportsSection.classList.remove("hidden");
+
+  // Render charts
+  renderLineChart();
+  renderTrendBarChart();
 });
 
 settingsMenu.addEventListener("click", (e) => {
   e.preventDefault();
   setActive(settingsMenu);
-  // Section not implemented, keep hidden
   dashboardSection.classList.add("hidden");
   transactionsSection.classList.add("hidden");
+  reportsSection.classList.add("hidden");
+  settingsSection.classList.remove("hidden");
 });
