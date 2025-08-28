@@ -44,13 +44,11 @@ function clearApiError() {
 // Add a new transaction to the API
 async function addTransactionAPI(transaction) {
   try {
-    console.log("[API] POST", API_BASE_URL, transaction);
     const res = await fetch(API_BASE_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(transaction),
     });
-    console.log("[API] POST response", res);
     if (!res.ok) throw new Error("API error: " + res.status);
     return await res.json();
   } catch (err) {
@@ -63,13 +61,11 @@ async function addTransactionAPI(transaction) {
 // Update an existing transaction in the API
 async function updateTransactionAPI(id, transaction) {
   try {
-    console.log("[API] PUT", `${API_BASE_URL}/${id}`, transaction);
     const res = await fetch(`${API_BASE_URL}/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(transaction),
     });
-    console.log("[API] PUT response", res);
     if (!res.ok) throw new Error("API error: " + res.status);
     return await res.json();
   } catch (err) {
@@ -82,9 +78,7 @@ async function updateTransactionAPI(id, transaction) {
 // Delete a transaction from the API
 async function deleteTransactionAPI(id) {
   try {
-    console.log("[API] DELETE", `${API_BASE_URL}/${id}`);
     const res = await fetch(`${API_BASE_URL}/${id}`, { method: "DELETE" });
-    console.log("[API] DELETE response", res);
     if (!res.ok) throw new Error("API error: " + res.status);
   } catch (err) {
     console.error("Failed to delete transaction:", err);
@@ -101,13 +95,10 @@ async function loadTransactions() {
   if (fromDateStr) params.push(`date_gte=${fromDateStr}`);
   if (toDateStr) params.push(`date_lte=${toDateStr}`);
   if (params.length) url += `?${params.join("&")}`;
-  console.log("[API] GET", url);
   try {
     let res = await fetch(url);
-    console.log("[API] GET response", res);
     if (!res.ok) {
       let text = await res.text();
-      console.error("[API] GET error response text:", text);
       throw new Error("API error: " + res.status);
     }
     let data;
@@ -115,7 +106,6 @@ async function loadTransactions() {
       data = await res.json();
     } catch (jsonErr) {
       let text = await res.text();
-      console.error("[API] GET invalid JSON:", text);
       showApiError("API returned invalid data format.");
       return [];
     }
@@ -126,7 +116,6 @@ async function loadTransactions() {
       if (!res.ok) throw new Error("API error: " + res.status);
       data = await res.json();
     }
-    console.log("[API] data loaded:", data);
     clearApiError();
     return data;
   } catch (err) {
@@ -239,7 +228,6 @@ function renderTransactions() {
   const selectedMonth = monthSelectEl ? monthSelectEl.value : "all";
 
   // Date filtering is now handled by API, only filter by type and category and month here
-  console.log("All transactions:", transactions);
   let filtered = transactions.filter((t) => {
     const typeMatch = typeFilter === "all" || t.type === typeFilter;
     const categoryMatch =
@@ -250,7 +238,6 @@ function renderTransactions() {
     }
     return typeMatch && categoryMatch && monthMatch;
   });
-  console.log("Filtered transactions:", filtered);
 
   if (filtered.length === 0) {
     tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">No transactions found.</td></tr>`;
@@ -448,24 +435,14 @@ function openEditModal(index) {
 
 // ---------- Init ----------
 async function init() {
-  console.log('[DEBUG] App init start');
   transactions = await loadTransactions();
-  console.log('[DEBUG] Transactions loaded:', transactions);
   renderTransactions();
-  console.log('[DEBUG] Rendered transactions');
   updateSummary();
-  console.log('[DEBUG] Updated summary');
   populateCategoryFilter(); // refresh categories
-  console.log('[DEBUG] Populated category filter');
   populateMonthDropdown(); // refresh months
-  console.log('[DEBUG] Populated month dropdown');
   renderChart();
-  console.log('[DEBUG] Rendered pie chart');
   renderBarChart();
-  console.log('[DEBUG] Rendered bar chart');
   attachRowButtons();
-  console.log('[DEBUG] Attached row buttons');
-  console.log('[DEBUG] App init complete');
 }
 init();
 

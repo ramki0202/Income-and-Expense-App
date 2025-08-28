@@ -82,7 +82,7 @@
                     </div>
                     <div class="flex justify-end space-x-2 pt-2">
                         <button type="button" id="closeModal"
-                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition">Cancel</button>
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition">Close</button>
                         <button type="submit"
                             class="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition">Add</button>
                     </div>
@@ -198,59 +198,59 @@
             <section id="transactionsSection" class="hidden">
                 <!-- Transactions by Month -->
                 <section>
-                  <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-gray-700">Transactions by Month</h2>
-                    <div class="flex flex-wrap gap-4 items-center bg-gray-50 px-4 py-2 rounded-lg shadow-sm">
-                      <div class="flex items-center gap-2">
-                        <label for="monthSelect" class="font-medium text-gray-700">Month:</label>
-                        <select id="monthSelect" class="border border-gray-300 rounded px-2 py-1">
-                          <!-- Options will be filled dynamically -->
-                        </select>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <label for="sort" class="font-medium text-gray-700">Sort by:</label>
-                        <select id="sort"
-                          class="border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition">
-                          <option value="date_desc">Date (Newest)</option>
-                          <option value="date_asc">Date (Oldest)</option>
-                          <option value="amount_desc">Amount (High → Low)</option>
-                          <option value="amount_asc">Amount (Low → High)</option>
-                        </select>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <label for="categoryFilter" class="font-medium text-gray-700">Category:</label>
-                        <select id="categoryFilter"
-                          class="border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition">
-                          <option value="all">All</option>
-                          <!-- Options will be filled dynamically -->
-                        </select>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <label for="filter" class="font-medium text-gray-700">Type:</label>
-                        <select id="filter"
-                          class="border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition">
-                          <option value="all">All</option>
-                          <option value="income">Income</option>
-                          <option value="expense">Expense</option>
-                        </select>
-                      </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold text-gray-700">Transactions by Month</h2>
+                        <div class="flex flex-wrap gap-4 items-center bg-gray-50 px-4 py-2 rounded-lg shadow-sm">
+                            <div class="flex items-center gap-2">
+                                <label for="monthSelect" class="font-medium text-gray-700">Month:</label>
+                                <select id="monthSelect" class="border border-gray-300 rounded px-2 py-1">
+                                    <!-- Options will be filled dynamically -->
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="sort" class="font-medium text-gray-700">Sort by:</label>
+                                <select id="sort"
+                                    class="border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition">
+                                    <option value="date_desc">Date (Newest)</option>
+                                    <option value="date_asc">Date (Oldest)</option>
+                                    <option value="amount_desc">Amount (High → Low)</option>
+                                    <option value="amount_asc">Amount (Low → High)</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="categoryFilter" class="font-medium text-gray-700">Category:</label>
+                                <select id="categoryFilter"
+                                    class="border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition">
+                                    <option value="all">All</option>
+                                    <!-- Options will be filled dynamically -->
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="filter" class="font-medium text-gray-700">Type:</label>
+                                <select id="filter"
+                                    class="border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition">
+                                    <option value="all">All</option>
+                                    <option value="income">Income</option>
+                                    <option value="expense">Expense</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                  <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                    <table class="min-w-full text-left text-sm">
-                      <thead class="bg-gray-50 border-b">
-                        <tr>
-                          <th class="px-6 py-3">Date</th>
-                          <th class="px-6 py-3">Category</th>
-                          <th class="px-6 py-3">Type</th>
-                          <th class="px-6 py-3">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody id="transaction-body">
-                        <!-- Transactions will be rendered here -->
-                      </tbody>
-                    </table>
-                  </div>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <table class="min-w-full text-left text-sm">
+                            <thead class="bg-gray-50 border-b">
+                                <tr>
+                                    <th class="px-6 py-3">Date</th>
+                                    <th class="px-6 py-3">Category</th>
+                                    <th class="px-6 py-3">Type</th>
+                                    <th class="px-6 py-3">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transaction-body">
+                                <!-- Transactions will be rendered here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </section>
             </section>
             <section id="reportsSection" class="hidden">
