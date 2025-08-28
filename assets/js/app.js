@@ -1,4 +1,3 @@
-
 // -------------------- DOM Selectors --------------------
 const balanceEl = document.querySelector("#balance"); // Balance display
 const incomeEl = document.querySelector("#income"); // Income display
@@ -13,7 +12,8 @@ const categoryFilterEl = document.getElementById("categoryFilter"); // Category 
 const sortEl = document.getElementById("sort"); // Sort select
 const fromDateEl = document.getElementById("fromDate"); // From date filter
 const toDateEl = document.getElementById("toDate"); // To date filter
-const API_BASE_URL = "https://68ae7584b91dfcdd62b9356a.mockapi.io/incomeandexpence"; // API endpoint
+const API_BASE_URL =
+  "https://68ae7584b91dfcdd62b9356a.mockapi.io/incomeandexpence"; // API endpoint
 
 // -------------------- State Variables --------------------
 let transactions = []; // All transactions
@@ -22,32 +22,74 @@ let barChartInstance = null; // Bar chart instance
 // Pie chart instance (declared above with other state variables)
 let editingIndex = null; // Index of transaction being edited
 
+// -------------------- Error Message UI --------------------
+function showApiError(message) {
+  let errDiv = document.getElementById("apiErrorMsg");
+  if (!errDiv) {
+    errDiv = document.createElement("div");
+    errDiv.id = "apiErrorMsg";
+    errDiv.style =
+      "background:#fee;color:#b91c1c;padding:12px 20px;margin:10px 0;border-radius:8px;font-weight:bold;";
+    document.body.prepend(errDiv);
+  }
+  errDiv.textContent = message;
+}
+function clearApiError() {
+  const errDiv = document.getElementById("apiErrorMsg");
+  if (errDiv) errDiv.remove();
+}
 
 // -------------------- API Functions --------------------
 
 // Add a new transaction to the API
 async function addTransactionAPI(transaction) {
-  const res = await fetch(API_BASE_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(transaction),
-  });
-  return await res.json();
+  try {
+    console.log("[API] POST", API_BASE_URL, transaction);
+    const res = await fetch(API_BASE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(transaction),
+    });
+    console.log("[API] POST response", res);
+    if (!res.ok) throw new Error("API error: " + res.status);
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to add transaction:", err);
+    showApiError("Failed to add transaction. Please try again later.");
+    return null;
+  }
 }
 
 // Update an existing transaction in the API
 async function updateTransactionAPI(id, transaction) {
-  const res = await fetch(`${API_BASE_URL}/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(transaction),
-  });
-  return await res.json();
+  try {
+    console.log("[API] PUT", `${API_BASE_URL}/${id}`, transaction);
+    const res = await fetch(`${API_BASE_URL}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(transaction),
+    });
+    console.log("[API] PUT response", res);
+    if (!res.ok) throw new Error("API error: " + res.status);
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to update transaction:", err);
+    showApiError("Failed to update transaction. Please try again later.");
+    return null;
+  }
 }
 
 // Delete a transaction from the API
 async function deleteTransactionAPI(id) {
-  await fetch(`${API_BASE_URL}/${id}`, { method: "DELETE" });
+  try {
+    console.log("[API] DELETE", `${API_BASE_URL}/${id}`);
+    const res = await fetch(`${API_BASE_URL}/${id}`, { method: "DELETE" });
+    console.log("[API] DELETE response", res);
+    if (!res.ok) throw new Error("API error: " + res.status);
+  } catch (err) {
+    console.error("Failed to delete transaction:", err);
+    showApiError("Failed to delete transaction. Please try again later.");
+  }
 }
 
 // Load transactions from the API, optionally filtered by date
@@ -59,17 +101,77 @@ async function loadTransactions() {
   if (fromDateStr) params.push(`date_gte=${fromDateStr}`);
   if (toDateStr) params.push(`date_lte=${toDateStr}`);
   if (params.length) url += `?${params.join("&")}`;
-  console.log("Fetching transactions from:", url);
-  let res = await fetch(url);
-  let data = await res.json();
-  // If no data returned and filters were applied, try fetching all
-  if (data.length === 0 && params.length) {
-    console.warn("No data with date filter, retrying without filter");
-    res = await fetch(API_BASE_URL);
-    data = await res.json();
+  console.log("[API] GET", url);
+  try {
+    let res = await fetch(url);
+    console.log("[API] GET response", res);
+    if (!res.ok) {
+      let text = await res.text();
+      console.error("[API] GET error response text:", text);
+      throw new Error("API error: " + res.status);
+    }
+    let data;
+    try {
+      data = await res.json();
+    } catch (jsonErr) {
+      let text = await res.text();
+      console.error("[API] GET invalid JSON:", text);
+      showApiError("API returned invalid data format.");
+      return [];
+    }
+    // If no data returned and filters were applied, try fetching all
+    if (data.length === 0 && params.length) {
+      console.warn("No data with date filter, retrying without filter");
+      res = await fetch(API_BASE_URL);
+      if (!res.ok) throw new Error("API error: " + res.status);
+      data = await res.json();
+    }
+    console.log("[API] data loaded:", data);
+    clearApiError();
+    return data;
+  } catch (err) {
+    console.error("Failed to fetch transactions:", err);
+    showApiError(
+      "Failed to fetch transactions. Please check your connection or try again later."
+    );
+    return [];
   }
-  console.log("API data loaded:", data);
-  return data;
+}
+// -------------------- Month Filter Logic --------------------
+const monthSelectEl = document.getElementById("monthSelect");
+
+function getMonthYearString(date) {
+  const d = new Date(date);
+  if (isNaN(d)) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function populateMonthDropdown() {
+  if (!monthSelectEl) return;
+  // Get unique month-year values from transactions
+  const monthSet = new Set();
+  transactions.forEach((t) => {
+    if (t.date) {
+      const str = getMonthYearString(t.date);
+      if (str) monthSet.add(str);
+    }
+  });
+  const monthArr = Array.from(monthSet).sort().reverse();
+  monthSelectEl.innerHTML =
+    `<option value="all">All</option>` +
+    monthArr
+      .map((m) => {
+        const [year, month] = m.split("-");
+        const date = new Date(year, month - 1);
+        return `<option value="${m}">${date.toLocaleString("default", {
+          month: "long",
+        })} ${year}</option>`;
+      })
+      .join("");
+}
+
+if (monthSelectEl) {
+  monthSelectEl.addEventListener("change", renderTransactions);
 }
 
 let pieChartInstance = null;
@@ -134,16 +236,19 @@ if (sortEl) {
 function renderTransactions() {
   const typeFilter = filterEl ? filterEl.value : "all";
   const categoryFilter = categoryFilterEl ? categoryFilterEl.value : "all";
-  const fromDateStr = fromDateEl.value;
-  const toDateStr = toDateEl.value;
+  const selectedMonth = monthSelectEl ? monthSelectEl.value : "all";
 
-  // Date filtering is now handled by API, only filter by type and category here
+  // Date filtering is now handled by API, only filter by type and category and month here
   console.log("All transactions:", transactions);
-  const filtered = transactions.filter((t) => {
+  let filtered = transactions.filter((t) => {
     const typeMatch = typeFilter === "all" || t.type === typeFilter;
     const categoryMatch =
       categoryFilter === "all" || t.category === categoryFilter;
-    return typeMatch && categoryMatch;
+    let monthMatch = true;
+    if (selectedMonth && selectedMonth !== "all") {
+      monthMatch = getMonthYearString(t.date) === selectedMonth;
+    }
+    return typeMatch && categoryMatch && monthMatch;
   });
   console.log("Filtered transactions:", filtered);
 
@@ -233,12 +338,19 @@ if (categoryFilterEl) {
   });
 }
 
-[fromDateEl, toDateEl].forEach((el) => {
-  el.addEventListener("change", async () => {
+
+if (fromDateEl) {
+  fromDateEl.addEventListener("change", async () => {
     transactions = await loadTransactions();
     renderTransactions();
   });
-});
+}
+if (toDateEl) {
+  toDateEl.addEventListener("change", async () => {
+    transactions = await loadTransactions();
+    renderTransactions();
+  });
+}
 
 // Populate category filter dynamically
 function populateCategoryFilter() {
@@ -336,13 +448,24 @@ function openEditModal(index) {
 
 // ---------- Init ----------
 async function init() {
+  console.log('[DEBUG] App init start');
   transactions = await loadTransactions();
+  console.log('[DEBUG] Transactions loaded:', transactions);
   renderTransactions();
+  console.log('[DEBUG] Rendered transactions');
   updateSummary();
+  console.log('[DEBUG] Updated summary');
   populateCategoryFilter(); // refresh categories
+  console.log('[DEBUG] Populated category filter');
+  populateMonthDropdown(); // refresh months
+  console.log('[DEBUG] Populated month dropdown');
   renderChart();
+  console.log('[DEBUG] Rendered pie chart');
   renderBarChart();
+  console.log('[DEBUG] Rendered bar chart');
   attachRowButtons();
+  console.log('[DEBUG] Attached row buttons');
+  console.log('[DEBUG] App init complete');
 }
 init();
 
@@ -502,27 +625,35 @@ currencySelect.addEventListener("change", () => {
 const lightThemeBtn = document.getElementById("lightThemeBtn");
 const darkThemeBtn = document.getElementById("darkThemeBtn");
 
+function applyTheme(theme) {
+  if (theme === "dark") {
+    document.documentElement.classList.add("dark");
+    document.body.classList.add("bg-gray-900");
+    document.body.classList.remove("bg-gray-100");
+  } else {
+    document.documentElement.classList.remove("dark");
+    document.body.classList.remove("bg-gray-900");
+    document.body.classList.add("bg-gray-100");
+  }
+}
+
 if (lightThemeBtn) {
   lightThemeBtn.addEventListener("click", () => {
-    document.documentElement.classList.remove("dark");
     localStorage.setItem("theme", "light");
+    applyTheme("light");
   });
 }
 
 if (darkThemeBtn) {
   darkThemeBtn.addEventListener("click", () => {
-    document.documentElement.classList.add("dark");
     localStorage.setItem("theme", "dark");
+    applyTheme("dark");
   });
 }
 
 // Apply saved theme on load
 const savedTheme = localStorage.getItem("theme");
-if (savedTheme === "dark") {
-  document.documentElement.classList.add("dark");
-} else {
-  document.documentElement.classList.remove("dark");
-}
+applyTheme(savedTheme === "dark" ? "dark" : "light");
 
 // Reset button
 const resetBtn = document.getElementById("resetBtn");
